@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 
@@ -52,13 +54,19 @@ class _GalleryState extends State<Gallery> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('Gallery'),
+      appBar: AppBar(
+        title: Text('Gallery'),
+      ),
+      body: GridView.builder(
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          // A grid view with 3 items per row
+          crossAxisCount: 3,
         ),
-        body: Center(
-          // Modify this line as follows
-          child: Text('There are ${assets.length} assets'),
-        )
+        itemCount: assets.length,
+        itemBuilder: (_, index) {
+          return AssetThumbnail(asset: assets[index]);
+        },
+      ),
     );
   }
 
@@ -76,5 +84,52 @@ class _GalleryState extends State<Gallery> {
 
     // Update the state and notify UI
     setState(() => assets = recentAssets);
+  }
+}
+
+class AssetThumbnail extends StatelessWidget {
+  const AssetThumbnail({
+    Key key,
+    @required this.asset,
+  }) : super(key: key);
+
+  final AssetEntity asset;
+
+  @override
+  Widget build(BuildContext context) {
+    // We're using a FutureBuilder since thumbData is a future
+    return FutureBuilder<Uint8List>(
+      future: asset.thumbData,
+      builder: (_, snapshot) {
+        final bytes = snapshot.data;
+        // If we have no data, display a spinner
+        if (bytes == null) return CircularProgressIndicator();
+        // If there's data, display it as an image
+        return InkWell(
+          onTap: () {
+            // TODO: navigate to Image/Video screen
+          },
+          child: Stack(
+            children: [
+              // Wrap the image in a Positioned.fill to fill the space
+              Positioned.fill(
+                child: Image.memory(bytes, fit: BoxFit.cover),
+              ),
+              // Display a Play icon if the asset is a video
+              if (asset.type == AssetType.video)
+                Center(
+                  child: Container(
+                    color: Colors.blue,
+                    child: Icon(
+                      Icons.play_arrow,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
