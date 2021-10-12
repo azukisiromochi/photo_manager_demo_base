@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
@@ -90,17 +91,33 @@ class _GalleryState extends State<Gallery> {
 
 class AssetThumbnail extends StatelessWidget {
   const AssetThumbnail({
-    Key key,
-    @required this.asset,
+    Key ?key,
+    required this.asset,
   }) : super(key: key);
 
   final AssetEntity asset;
+
+  Future<Uint8List> _futureUint8List(Future<Uint8List?> src) async {
+
+    var completer = new Completer<Uint8List>();
+    src.then((value) => completer.complete(value!));
+
+    return completer.future;
+  }
+
+  Future<File> _futureFile(Future<File?> src) async {
+
+    var completer = new Completer<File>();
+    src.then((value) => completer.complete(value!));
+
+    return completer.future;
+  }
 
   @override
   Widget build(BuildContext context) {
     // We're using a FutureBuilder since thumbData is a future
     return FutureBuilder<Uint8List>(
-      future: asset.thumbData,
+      future: _futureUint8List(asset.thumbData),
       builder: (_, snapshot) {
         final bytes = snapshot.data;
         // If we have no data, display a spinner
@@ -114,10 +131,10 @@ class AssetThumbnail extends StatelessWidget {
                 builder: (_) {
                   if (asset.type == AssetType.image) {
                     // If this is an image, navigate to ImageScreen
-                    return ImageScreen(imageFile: asset.file);
+                    return ImageScreen(imageFile: _futureFile(asset.file));
                   } else {
                     // if it's not, navigate to VideoScreen
-                    return VideoScreen(videoFile: asset.file);
+                    return VideoScreen(videoFile: _futureFile(asset.file));
                   }
                 },
               ),
@@ -150,11 +167,11 @@ class AssetThumbnail extends StatelessWidget {
 
 class ImageScreen extends StatelessWidget {
   const ImageScreen({
-    Key key,
-    @required this.imageFile,
+    Key ?key,
+    required this.imageFile,
   }) : super(key: key);
 
-  final Future<File> imageFile;
+  final Future<File>? imageFile;
 
   @override
   Widget build(BuildContext context) {
@@ -175,18 +192,18 @@ class ImageScreen extends StatelessWidget {
 
 class VideoScreen extends StatefulWidget {
   const VideoScreen({
-    Key key,
-    @required this.videoFile,
+    Key ?key,
+    required this.videoFile,
   }) : super(key: key);
 
-  final Future<File> videoFile;
+  final Future<File>? videoFile;
 
   @override
   _VideoScreenState createState() => _VideoScreenState();
 }
 
 class _VideoScreenState extends State<VideoScreen> {
-  VideoPlayerController _controller;
+  late VideoPlayerController _controller;
   bool initialized = false;
 
   @override
@@ -203,7 +220,7 @@ class _VideoScreenState extends State<VideoScreen> {
 
   _initVideo() async {
     final video = await widget.videoFile;
-    _controller = VideoPlayerController.file(video)
+    _controller = VideoPlayerController.file(video!)
       // Play the video again when it ends
       ..setLooping(true)
       // initialize the controller and notify UI when done
