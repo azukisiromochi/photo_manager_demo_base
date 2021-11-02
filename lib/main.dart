@@ -56,20 +56,30 @@ class _GalleryState extends State<Gallery> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Gallery'),
-      ),
-      body: GridView.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          // A grid view with 3 items per row
-          crossAxisCount: 3,
+        appBar: AppBar(
+          title: Text('Gallery'),
         ),
-        itemCount: assets.length,
-        itemBuilder: (_, index) {
-          return AssetThumbnail(asset: assets[index]);
-        },
-      ),
-    );
+        body: Column(children: <Widget>[
+          Expanded(
+            flex: 5, // 割合.
+            child: Container(
+              color: Colors.grey,
+            ),
+          ),
+          Expanded(
+            flex: 5, // 割合.
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                // A grid view with 3 items per row
+                crossAxisCount: 4,
+              ),
+              itemCount: assets.length,
+              itemBuilder: (_, index) {
+                return AssetThumbnail(asset: assets[index]);
+              },
+            ),
+          )
+        ]));
   }
 
   _fetchAssets() async {
@@ -91,14 +101,13 @@ class _GalleryState extends State<Gallery> {
 
 class AssetThumbnail extends StatelessWidget {
   const AssetThumbnail({
-    Key ?key,
+    Key? key,
     required this.asset,
   }) : super(key: key);
 
   final AssetEntity asset;
 
   Future<Uint8List> _futureUint8List(Future<Uint8List?> src) async {
-
     var completer = new Completer<Uint8List>();
     src.then((value) => completer.complete(value!));
 
@@ -106,7 +115,6 @@ class AssetThumbnail extends StatelessWidget {
   }
 
   Future<File> _futureFile(Future<File?> src) async {
-
     var completer = new Completer<File>();
     src.then((value) => completer.complete(value!));
 
@@ -167,7 +175,7 @@ class AssetThumbnail extends StatelessWidget {
 
 class ImageScreen extends StatelessWidget {
   const ImageScreen({
-    Key ?key,
+    Key? key,
     required this.imageFile,
   }) : super(key: key);
 
@@ -192,7 +200,7 @@ class ImageScreen extends StatelessWidget {
 
 class VideoScreen extends StatefulWidget {
   const VideoScreen({
-    Key ?key,
+    Key? key,
     required this.videoFile,
   }) : super(key: key);
 
