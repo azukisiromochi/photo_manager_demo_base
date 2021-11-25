@@ -33,39 +33,24 @@ class Post extends StatefulWidget {
 }
 
 class _PostState extends State<Post> {
-  List<AssetEntity> assets = [];
+  late Future<List<AssetEntity>> _future;
   int postIndex = 0;
   int currentPage = 0;
 
-  var grid;
+  var _grid;
 
   @override
   void initState() {
-    _fetchAssets();
+    _future = _fetchAssets();
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (grid == null) {
-      grid = Expanded(
-        child: GridView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
-          ),
-          itemCount: assets.length,
-          itemBuilder: (_, index) {
-            return GestureDetector(
-              child: AssetThumbnail(asset: assets[index]),
-              onTap: () => setState(() {
-                postIndex = index;
-              }),
-            );
-          },
-        ),
-      );
+
+    // グリッドは初回読み込み時に取得したものを継続的に利用し、タップのたびに再描画されないようにしている
+    if (_grid == null) {
+      _grid = _makeGrid();
     }
 
     return Scaffold(
@@ -130,24 +115,75 @@ class _PostState extends State<Post> {
         index: postIndex,
         child: Column(
           children: [
-            MainImage(
-              assets: assets,
-            ),
-            grid,
+            FutureBuilder(
+                future: _future,
+                builder: (BuildContext context,
+                    AsyncSnapshot<List<AssetEntity>> snapshot) {
+                  Widget childWidget;
+                  if (snapshot.hasData) {
+                    List<AssetEntity> assets = snapshot.data!;
+                    childWidget = MainImage(
+                      assets: assets,
+                    );
+                  } else {
+                    childWidget = const CircularProgressIndicator();
+                  }
+                  return childWidget;
+                }),
+            _grid,
           ],
         ),
       ),
     );
   }
 
-  _fetchAssets() async {
+  Future<List<AssetEntity>> _fetchAssets() async {
     final albums = await PhotoManager.getAssetPathList(onlyAll: true);
     final recentAlbum = albums.first;
     final recentAssets = await recentAlbum.getAssetListRange(
       start: 0,
       end: 1000000,
     );
-    setState(() => assets = recentAssets);
+    return recentAssets;
+  }
+
+  /// グリッド作成
+  ///
+  /// `_fetchAssets` 処理の完了を待ってグリッドを生成する.
+  /// 処理が未完了のうちはプログレスを表示.
+  ///
+  _makeGrid() {
+    return FutureBuilder(
+      future: _future,
+      builder:
+          (BuildContext context, AsyncSnapshot<List<AssetEntity>> snapshot) {
+        Widget childWidget;
+        if (snapshot.hasData) {
+          List<AssetEntity> assets = snapshot.data!;
+          childWidget = Expanded(
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+              ),
+              itemCount: assets.length,
+              itemBuilder: (_, index) {
+                return GestureDetector(
+                  child: AssetThumbnail(asset: assets[index]),
+                  onTap: () => setState(() {
+                    postIndex = index;
+                  }),
+                );
+              },
+            ),
+          );
+        } else {
+          childWidget = const CircularProgressIndicator();
+        }
+        return childWidget;
+      },
+    );
   }
 }
 
@@ -180,6 +216,12 @@ class AssetThumbnail extends StatelessWidget {
   }
 }
 
+/// メイン画像用のウィジェット
+///
+/// 画面上部に表示される選択中の画像.
+/// 初期値は画像グリッド中の先頭の画像を表示する.
+/// グリッドの画像がタップされた場合、その画像を表示させる.
+///
 class MainImage extends StatelessWidget {
   MainImage({
     Key? key,
@@ -211,6 +253,10 @@ class MainImage extends StatelessWidget {
   }
 }
 
+/// グリッド選択伝搬ようのウィジェット
+///
+/// グリッドをタップされた場合に、タップされたグリッドのインデックスを通知する.
+///
 class _Inherited extends InheritedWidget {
   const _Inherited({
     Key? key,
