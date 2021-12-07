@@ -130,7 +130,9 @@ class _PostState extends State<Post> {
                   }
                   return childWidget;
                 }),
-            _grid,
+            Expanded(
+              child: _grid,
+            ),
           ],
         ),
       ),
@@ -160,23 +162,21 @@ class _PostState extends State<Post> {
         Widget childWidget;
         if (snapshot.hasData) {
           List<AssetEntity> assets = snapshot.data!;
-          childWidget = Expanded(
-            child: GridView.builder(
-              shrinkWrap: true,
-              physics: NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-              ),
-              itemCount: assets.length,
-              itemBuilder: (_, index) {
-                return GestureDetector(
-                  child: AssetThumbnail(asset: assets[index]),
-                  onTap: () => setState(() {
-                    postIndex = index;
-                  }),
-                );
-              },
+          childWidget = GridView.builder(
+            shrinkWrap: true,
+            physics: ScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
             ),
+            itemCount: assets.length,
+            itemBuilder: (_, index) {
+              return GestureDetector(
+                child: AssetThumbnail(asset: assets[index]),
+                onTap: () => setState(() {
+                  postIndex = index;
+                }),
+              );
+            },
           );
         } else {
           childWidget = const CircularProgressIndicator();
@@ -238,17 +238,7 @@ class MainImage extends StatelessWidget {
     return Container(
       width: 100.w,
       height: 100.w,
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 1,
-        ),
-        itemCount: assets.length,
-        itemBuilder: (_, index) {
-          return AssetThumbnail(asset: assets[newIndex]);
-        },
-      ),
+      child: AssetThumbnail(asset: assets[newIndex]),
     );
   }
 }
